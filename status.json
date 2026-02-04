@@ -18,7 +18,7 @@
   "client_action_required": false,
   "client_channel": {
     "type": "telegram",
-    "allowed_user_ids": []
+    "allowed_user_ids": [6660576747]
   },
   "client_questions": [],
   "client_answers": [],
