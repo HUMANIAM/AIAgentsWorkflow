@@ -1,46 +1,79 @@
 ---
-plugin: telegram_bridge_pilot
-version: 2
+plugin: steward_ai_zorba_bot
+version: 3
 owner: client
-last_updated: 2026-02-03
+last_updated: 2026-02-04
 ---
 
-# Problem (this run)
-Build a **Telegram client loop bridge** for the SDLC pipeline:
-- Agents write questions into `status.json` (single source of truth).
-- A local bridge process sends those questions to the client on Telegram.
-- The client replies in Telegram using `<question_id> = <answer>`.
-- The bridge writes answers back into `status.json.client_answers[]` and marks questions answered.
-- Fallback: if Telegram is not ready, client answers by editing `status.json` directly (or via chat → an agent writes it).
+# Goal (this run)
+Build `steward_ai_zorba_bot`: a local Telegram bridge that closes the loop for the SDLC pipeline.
 
-# Stack constraints
-- Backend: FastAPI + Python (Linux)
-- CI: GitHub Actions (required) — DevOps must implement.
-- Repo entrypoints: DevOps must create a single local entrypoint (e.g., `make check`, `make test`) and CI must call it.
+Definition of done:
+1) Agents can write questions into `status.json.client_questions[]`.
+2) The bridge sends those questions to the client on Telegram.
+3) The client replies on Telegram using: `<question_id> = <answer>`
+4) The bridge writes answers back into `status.json.client_answers[]` and marks matching questions as answered.
+5) Evidence is produced in `docs/comms_bootstrap_report.md` and the integration test report confirms AC-01.
 
-# Client comms policy
-- Primary channel: Telegram
-- Fallback channel: status.json manual replies (status_file)
-- Bootstrap phase MUST run first:
-  - either prove Telegram works OR explicitly set comms.state=fallback_only.
+# What the bridge must do
+- Watch `status.json` (polling is fine; keep it simple).
+- For each question where `delivery_status=pending`:
+  - send a Telegram message to the client
+  - set `delivery_status=sent`, set `delivered_at`
+- For each Telegram reply that matches `<question_id> = <answer>`:
+  - append to `status.json.client_answers[]`:
+    - question_id
+    - answer
+    - source="telegram"
+    - answered_at timestamp
+  - mark the corresponding question:
+    - `is_answered=true`, `answered_at`, `answered_by="client"`
+- Must be safe: only accept replies from allowed user IDs.
 
-# Secrets (provided by client; never committed)
-- TELEGRAM_BOT_TOKEN
-- TELEGRAM_ALLOWED_USER_IDS (client Telegram user id)
-- (optional) TELEGRAM_DEFAULT_CHAT_ID
-- (optional) GITHUB_TOKEN if using GitHub MCP server
+# Comms fallback (never block workflow)
+If Telegram is not ready or token is missing:
+- Set `status.json.comms.state = "fallback_only"`
+- Client answers by editing `status.json.client_answers[]` with `source="status_file"`
+- Workflow continues.
 
-# ChangeSet policy
-- commit_cap: 50 micro-commits per ChangeSet
-- only orchestrator merges to main: true
-- client ack required for merge: true (ChangeSet ACK via Telegram/fallback)
+# Repo constraints (do not violate)
+- Language: Python
+- Runtime: Linux local machine
+- Keep it minimal: no server hosting required
+- Secrets must NEVER be committed
 
-# Required client ACK gates
-- Requirements ACK is mandatory before architecture starts.
-- Final ACK is mandatory before done.
+# Where secrets live (already set by client)
+- `steward_ai_zorba_bot/.env` contains:
+  - TELEGRAM_BOT_TOKEN
+  - TELEGRAM_ALLOWED_USER_IDS
+  - (optional) TELEGRAM_DEFAULT_CHAT_ID
+- The bridge must load env from that file (or accept env vars).
 
-# Evidence rule
-No one is allowed to claim "done" without evidence:
-- measurable AC oracles
-- test reports
-- CI green on branch before merge (DevOps defines exact workflow)
+# GitHub policy (must comply)
+- No direct pushes to `main`. PR only.
+- Required status checks must pass before merge:
+  - `backend-test`
+- Orchestrator merges PRs only after:
+  1) CI green
+  2) required reviewer approvals
+  3) client ACK (when requested)
+
+# ChangeSet policy (strict)
+- Work in ChangeSets: CS-YYYYMMDD-###
+- Small commits allowed (micro-commits).
+- Orchestrator pushes branches, opens PRs, fixes CI failures on the same PR, and merges only when allowed.
+
+# Mandatory artifacts (for this run)
+- docs/acceptance_contract.md
+  - AC-01 must cover the Telegram Q/A round-trip updating status.json
+- docs/comms_bootstrap_report.md
+  - includes proof steps + failure modes + fallback procedure
+- docs/runbook.md
+  - how to run the bridge locally
+  - how to reset state (status.json cleanup)
+  - how to verify end-to-end manually
+
+# Scope guardrails
+- Focus ONLY on the Telegram bridge + workflow proof.
+- Do not build unrelated product features.
+- Avoid overengineering (no DB required unless absolutely necessary).
