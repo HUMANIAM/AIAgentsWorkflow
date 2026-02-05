@@ -23,3 +23,9 @@ DevOps MUST implement:
   - or Taskfile/scripts (record decision)
 - Update docs/runbook.md to reference only those entrypoints.
 - Record tooling decisions in docs/decisions.md (D-...).
+
+## Status updates (required)
+- Follow `docs/workflow_protocol.md`.
+- Do not change `status.json.current_phase` or `status.json.current_actor`.
+- On start: set `actor_status="in_progress"` and `phase_status="in_progress"`.
+- On completion: set `actor_status="completed"` and `phase_status="awaiting_review"`.
