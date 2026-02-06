@@ -49,11 +49,28 @@ When AI agents need client input, they write questions to `status.json`. This bo
 - Client can reply with a number (1, 2, 3) or type custom answer
 - Bot records answer and notifies the team to continue
 
-### 3. **Idea Brainstorming Mode** 💡 *(Coming Soon)*
-- `/idea` - Start brainstorming session with GPT
-- `/idea stop` - Generate context file from conversation
-- `/idea list` - List all ideas
-- `/idea execute <id>` - Activate idea for team to work on
+### 3. **Idea Brainstorming Mode** 💡
+Brainstorm ideas with GPT and manage them through a 4-state lifecycle:
+
+```
+NEW → PLANNED → ACTIVATED → DONE
+```
+
+| Command | Description | State Change |
+|---------|-------------|--------------|
+| `/idea` | Start brainstorming session with GPT | - |
+| `/idea stop` | Save idea with headline | → NEW |
+| `/idea list {state}` | List ideas by state (new/planned/activated/done) | - |
+| `/idea plan <id>` | Generate context file from chat | → PLANNED |
+| `/idea activate <id>` | Activate for team (backup context.md, reset status.json) | → ACTIVATED |
+| `/idea done <id>` | Mark idea complete | → DONE |
+
+**Workflow:**
+1. `/idea` - Chat with GPT about your idea
+2. `/idea stop` - Save when done brainstorming
+3. `/idea plan <id>` - Generate context file (calls GPT)
+4. `/idea activate <id>` - Activate for team to work on
+5. `/idea done <id>` - Mark complete after team finishes
 
 ---
 
@@ -164,7 +181,7 @@ steward_ai_zorba_bot/
 
 ### status.json Interface
 
-The bot reads and writes to `../status.json` (parent directory):
+The bot reads and writes to `../agent_runtime/status.json`:
 
 **Reading (questions from team):**
 ```json
@@ -232,9 +249,10 @@ httpx==0.27.0
 
 | File | Purpose |
 |------|---------|
-| `../status.json` | Single source of truth for workflow state |
-| `../plugin/context.md` | Current task context for the team |
-| `../docs/workflow_protocol.md` | SDLC workflow rules |
+| `../agent_runtime/status.json` | Single source of truth for workflow state |
+| `../agent_runtime/plugin/context.md` | Current task context for the team |
+| `../agent_runtime/ideas.md` | Ideas log with chat history |
+| `../agent_runtime/docs/workflow_protocol.md` | SDLC workflow rules |
 
 ---
 
