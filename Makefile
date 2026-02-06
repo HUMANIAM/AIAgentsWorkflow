@@ -41,7 +41,9 @@ validate: ## Validate configuration files
 
 test: ## Run tests
 	@echo "Running tests..."
-	@if [ -d "steward_ai_zorba_bot/tests" ]; then \
+	@if [ -d "tests" ]; then \
+		pytest tests/ -v; \
+	elif [ -d "steward_ai_zorba_bot/tests" ]; then \
 		pytest steward_ai_zorba_bot/tests/ -v; \
 	else \
 		echo "No tests found, skipping"; \
