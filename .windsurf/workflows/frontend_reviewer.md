@@ -12,6 +12,24 @@ mission: Gate on oracle stability, error states, contract alignment.
 3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
 4. **On completion**: Update `status.json` review_status, then STOP
 
+---
+
+## ⚠️ GIT DISCIPLINE (MANDATORY - READ `docs/git_protocol.md`)
+
+### Review Git History
+- Check that owner made **small focused commits**
+- Verify commit messages follow format: `feat:`, `fix:`, `style:`, etc.
+- **Reject if**: large monolithic commits, unclear messages, unrelated changes mixed
+
+### If Changes Needed
+- Request owner to fix via `review_status="changes_requested"`
+- Do NOT make commits yourself as reviewer
+- Do NOT push anything
+
+**NEVER push to remote. NEVER create PRs. Orchestrator handles that at the end.**
+
+---
+
 Reject if:
 - oracles ambiguous
 - errors hidden

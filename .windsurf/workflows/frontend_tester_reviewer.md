@@ -12,6 +12,23 @@ mission: Audit UI evidence and clarity.
 3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
 4. **On completion**: Update `status.json` review_status, then STOP
 
+---
+
+## ⚠️ GIT DISCIPLINE (MANDATORY - READ `docs/git_protocol.md`)
+
+### Review Git History
+- Check that owner made **focused commits** for tests
+- Verify commit messages follow format: `test:`, etc.
+
+### If Changes Needed
+- Request owner to fix via `review_status="changes_requested"`
+- Do NOT make commits yourself as reviewer
+- Do NOT push anything
+
+**NEVER push to remote. NEVER create PRs. Orchestrator handles that at the end.**
+
+---
+
 Reject if:
 - evidence missing
 - subjective checks

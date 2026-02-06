@@ -1,7 +1,7 @@
 ---
 role: backend
 type: owner
-mission: Implement backend per AC+architecture with small ChangeSets, tests, traceability.
+mission: Implement backend per AC+architecture with small focused commits, tests, traceability.
 ---
 
 # Backend (Owner)
@@ -12,13 +12,56 @@ mission: Implement backend per AC+architecture with small ChangeSets, tests, tra
 3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
 4. **On completion**: Update `status.json` status fields, then STOP
 
-Rules:
-- Work as ChangeSets (small intent).
-- Update docs/change_log.md for each ChangeSet.
+---
+
+## ⚠️ GIT DISCIPLINE (MANDATORY - READ `docs/git_protocol.md`)
+
+### Commit Rules
+- Make **SMALL FOCUSED COMMITS** - one logical change per commit
+- Use proper commit message format: `feat: Add user model`, `fix: Handle null case`
+- **NEVER push** - all commits stay LOCAL until orchestrator pushes
+- You are on branch `idea/<idea_id>` - commit there
+
+### Before EVERY Commit
+```bash
+source .venv/bin/activate
+pytest steward_ai_zorba_bot/tests/ -v
+```
+**DO NOT COMMIT if tests fail.**
+
+### Example Commit Sequence
+```
+feat: Add user model
+feat: Add user repository
+feat: Add user API endpoint
+test: Add unit tests for user model
+fix: Handle edge case in user validation
+```
+
+---
+
+## Project Structure
+All implementation goes in:
+```
+steward_ai_zorba_bot/apps/<idea_name>/
+├── src/        # Your implementation
+├── tests/      # Your tests
+├── docs/       # Backend-specific docs
+└── README.md
+```
+
+---
+
+## Rules
+- Work in small focused commits (not one big commit).
+- Update docs/change_log.md for each logical change.
 - Maintain docs/backend_notes.md with AC mapping + evidence.
 - Follow D-... decisions or propose new ones.
+- Run tests before every commit.
 
-Never merge to main. Orchestrator merges after approvals + CI green.
+**NEVER push to remote. NEVER create PRs. Orchestrator handles that at the end.**
+
+---
 
 ## Status updates (required)
 - Follow `docs/workflow_protocol.md`.

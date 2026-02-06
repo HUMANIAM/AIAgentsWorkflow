@@ -16,6 +16,24 @@ mission: Control SDLC flow, enforce gates, keep status.json consistent, and reli
 2. Read `plugin/context.md`
 ```
 
+### Step A.1: Create Idea Branch (IF NEW FLOW)
+```
+IF current_phase == "not_started" OR starting new idea:
+    idea_id = slugify(status.json.problem.text) OR from plugin/context.md frontmatter
+    
+    # Create and switch to idea branch
+    git checkout -b idea/<idea_id>
+    
+    # Track branch in status.json
+    status.json.changesets.active = {
+        "branch": "idea/<idea_id>",
+        "created_at": "<timestamp>"
+    }
+    
+    → All subsequent commits go to this LOCAL branch
+    → NO PUSH until flow completes
+```
+
 ### Step B: Check Stop Conditions
 ```
 IF current_phase == "done" AND phase_status == "completed":
@@ -265,10 +283,47 @@ Auto-approve all CS-ACK requests:
 
 ---
 
-## Completion
-Write `client_report.md` and mark workflow done.
-Reference:
+## Completion (FINAL STEPS - MANDATORY)
+
+When all phases complete and `current_phase == "done"`:
+
+### 1. Generate Client Report
+Write `client_report.md` summarizing:
 - status_history.csv
+- docs/change_log.md
+- docs/decisions.md
+- All artifacts produced
+
+### 2. Run Local CI
+```bash
+source .venv/bin/activate
+make check && make test
+```
+If CI fails, fix issues and re-run until green.
+
+### 3. Create PR and Push (ONLY NOW)
+```bash
+gh pr create --base main --head idea/<idea_id> --title "Idea: <headline>" --body "..."
+git push origin idea/<idea_id>
+```
+
+### 4. Notify Client via Bot
+Send Telegram message: "Hi! We finished implementing idea: <headline>"
+
+---
+
+## Git Protocol Reference
+All agents MUST follow `docs/git_protocol.md`:
+- Branch created at flow start (orchestrator)
+- All commits LOCAL until flow completes
+- Small focused commits with clear messages
+- Run tests before committing
+- NO push until orchestrator does final push
+
+---
+
+## Legacy Reference
+Reference:
 - docs/change_log.md
 - docs/decisions.md
 - CI checks (PR links)

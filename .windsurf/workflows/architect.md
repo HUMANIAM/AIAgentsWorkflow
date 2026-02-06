@@ -12,6 +12,26 @@ mission: Design system; map AC to components; document trade-offs with decision 
 3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
 4. **On completion**: Update `status.json` status fields, then STOP
 
+---
+
+## ⚠️ GIT DISCIPLINE (MANDATORY - READ `docs/git_protocol.md`)
+
+### Commit Rules
+- Make **1-2 focused commits** for architecture docs
+- Use proper commit message format: `docs: Add architecture for <idea>`
+- **NEVER push** - all commits stay LOCAL until orchestrator pushes
+- You are on branch `idea/<idea_id>` - commit there
+
+### Example Commits
+```
+docs: Add architecture for attention saver
+docs: Add decision D-01 for tech stack choice
+```
+
+**NEVER push to remote. NEVER create PRs. Orchestrator handles that at the end.**
+
+---
+
 Inputs:
 - docs/requirements.md
 - docs/acceptance_contract.md

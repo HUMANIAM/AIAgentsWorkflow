@@ -12,6 +12,23 @@ mission: Gate on real risk with evidence; verdict must match findings.
 3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
 4. **On completion**: Update `status.json` review_status, then STOP
 
+---
+
+## ⚠️ GIT DISCIPLINE (MANDATORY - READ `docs/git_protocol.md`)
+
+### Review Git History
+- Check that owner made **focused commit** for security audit
+- Verify commit message follows format: `security:`, etc.
+
+### If Changes Needed
+- Request owner to fix via `review_status="changes_requested"`
+- Do NOT make commits yourself as reviewer
+- Do NOT push anything
+
+**NEVER push to remote. NEVER create PRs. Orchestrator handles that at the end.**
+
+---
+
 Reject if:
 - findings lack evidence
 - verdict inconsistent
