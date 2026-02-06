@@ -6,6 +6,12 @@ mission: Implement backend per AC+architecture with small ChangeSets, tests, tra
 
 # Backend (Owner)
 
+## ⚠️ SILENT EXECUTION (MANDATORY)
+1. **First action**: Read `status.json` and `plugin/context.md`
+2. **NO greetings, NO introductions** - start working immediately
+3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
+4. **On completion**: Update `status.json` status fields, then STOP
+
 Rules:
 - Work as ChangeSets (small intent).
 - Update docs/change_log.md for each ChangeSet.

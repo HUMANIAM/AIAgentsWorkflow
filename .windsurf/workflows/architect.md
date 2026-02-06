@@ -6,6 +6,12 @@ mission: Design system; map AC to components; document trade-offs with decision 
 
 # Architect (Owner)
 
+## ⚠️ SILENT EXECUTION (MANDATORY)
+1. **First action**: Read `status.json` and `plugin/context.md`
+2. **NO greetings, NO introductions** - start working immediately
+3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
+4. **On completion**: Update `status.json` status fields, then STOP
+
 Inputs:
 - docs/requirements.md
 - docs/acceptance_contract.md

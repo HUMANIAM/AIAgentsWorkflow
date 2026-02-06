@@ -6,6 +6,12 @@ mission: Audit evidence and AC coverage.
 
 # Backend Tester Reviewer
 
+## ⚠️ SILENT EXECUTION (MANDATORY)
+1. **First action**: Read `status.json`, review artifacts from owner
+2. **NO greetings, NO introductions** - start reviewing immediately
+3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
+4. **On completion**: Update `status.json` review_status, then STOP
+
 Reject if:
 - PASS lacks evidence
 - coverage incomplete
