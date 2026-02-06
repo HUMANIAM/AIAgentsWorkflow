@@ -7,12 +7,21 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
+import shutil
 
-# Paths
+# Paths - use agent_runtime/ as base
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-IDEAS_FILE = PROJECT_ROOT / "ideas.md"
-PLUGIN_DIR = PROJECT_ROOT / "plugin"
-STATUS_FILE = PROJECT_ROOT / "status.json"
+AGENT_RUNTIME = PROJECT_ROOT / "agent_runtime"
+IDEAS_FILE = AGENT_RUNTIME / "ideas.md"
+PLUGIN_DIR = AGENT_RUNTIME / "plugin"
+STATUS_FILE = AGENT_RUNTIME / "status.json"
+
+# Idea states
+STATE_NEW = "NEW"
+STATE_PLANNED = "PLANNED"
+STATE_ACTIVATED = "ACTIVATED"
+STATE_DONE = "DONE"
+VALID_STATES = [STATE_NEW, STATE_PLANNED, STATE_ACTIVATED, STATE_DONE]
 
 # Active sessions per user (in-memory, survives during bot runtime)
 _active_sessions: Dict[int, str] = {}  # user_id -> idea_id
@@ -72,12 +81,17 @@ def _parse_ideas() -> List[Dict]:
 
 def create_idea(user_id: int) -> str:
     """Start a new idea session, return idea_id"""
-    # Generate temporary ID (will be replaced when we get headline from GPT)
+    # Generate temporary ID (will be replaced when we get headline)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     idea_id = f"idea_{timestamp}"
     
     # Store active session
     _active_sessions[user_id] = idea_id
+    
+    # Ensure ideas file exists
+    if not IDEAS_FILE.exists():
+        IDEAS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        IDEAS_FILE.write_text("# Ideas Log\n\n")
     
     # Create initial entry in ideas.md
     content = _read_ideas_file()
@@ -200,65 +214,209 @@ def list_ideas() -> List[Dict]:
     return _parse_ideas()
 
 
+def list_ideas_by_state(state: str) -> List[Dict]:
+    """List ideas filtered by state (case-insensitive)"""
+    state_upper = state.upper()
+    if state_upper not in VALID_STATES:
+        return []
+    return [idea for idea in _parse_ideas() if idea['status'].upper() == state_upper]
+
+
+def _update_idea_status(idea_id: str, new_status: str) -> bool:
+    """Update the status of an idea in ideas.md"""
+    content = _read_ideas_file()
+    marker = f"## ID: {idea_id}"
+    
+    if marker not in content:
+        return False
+    
+    parts = content.split(marker)
+    if len(parts) < 2:
+        return False
+    
+    section = parts[1]
+    next_idea = section.find('\n---\n## ID:')
+    if next_idea == -1:
+        idea_section = section
+        rest = ""
+    else:
+        idea_section = section[:next_idea]
+        rest = section[next_idea:]
+    
+    # Replace any status with new status
+    for old_state in VALID_STATES + ["IN_PROGRESS"]:
+        idea_section = idea_section.replace(f"**Status:** {old_state}", f"**Status:** {new_status}")
+    
+    content = parts[0] + marker + idea_section + rest
+    _write_ideas_file(content)
+    return True
+
+
 def generate_context_file(idea_id: str, context_content: str) -> str:
     """Create plugin/context_{idea_id}.md file"""
-    PLUGIN_DIR.mkdir(exist_ok=True)
+    PLUGIN_DIR.mkdir(parents=True, exist_ok=True)
     context_file = PLUGIN_DIR / f"context_{idea_id}.md"
     context_file.write_text(context_content)
     return str(context_file)
 
 
-def execute_idea(idea_id: str) -> Tuple[bool, str]:
+def plan_idea(idea_id: str, context_content: str) -> Tuple[bool, str]:
     """
-    Execute an idea: copy context_{idea_id}.md to context.md and update status.json
+    Plan an idea: generate context file and set status to PLANNED.
+    Returns (success, message)
+    """
+    # Find the idea
+    ideas = _parse_ideas()
+    idea = None
+    for i in ideas:
+        if i['id'] == idea_id:
+            idea = i
+            break
+    
+    if not idea:
+        return False, f"Idea not found: {idea_id}"
+    
+    if idea['status'].upper() not in [STATE_NEW, "IN_PROGRESS"]:
+        return False, f"Idea must be NEW to plan. Current status: {idea['status']}"
+    
+    # Generate context file
+    context_path = generate_context_file(idea_id, context_content)
+    
+    # Update status to PLANNED
+    _update_idea_status(idea_id, STATE_PLANNED)
+    
+    return True, f"Planned idea: {idea['headline']}\nContext file: {context_path}"
+
+
+def activate_idea(idea_id: str) -> Tuple[bool, str]:
+    """
+    Activate an idea: backup context.md, copy idea context, reset status.json.
     Returns (success, message)
     """
     context_file = PLUGIN_DIR / f"context_{idea_id}.md"
     main_context = PLUGIN_DIR / "context.md"
     
-    if not context_file.exists():
-        return False, f"Context file not found: {context_file}"
+    # Find the idea
+    ideas = _parse_ideas()
+    idea = None
+    for i in ideas:
+        if i['id'] == idea_id:
+            idea = i
+            break
     
-    # Copy to main context
+    if not idea:
+        return False, f"Idea not found: {idea_id}"
+    
+    if idea['status'].upper() != STATE_PLANNED:
+        return False, f"Idea must be PLANNED to activate. Current status: {idea['status']}. Run `/idea plan {idea_id}` first."
+    
+    if not context_file.exists():
+        return False, f"Context file not found. Run `/idea plan {idea_id}` first."
+    
+    # Backup current context.md if it exists
+    if main_context.exists():
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_path = PLUGIN_DIR / f"context_backup_{timestamp}.md"
+        shutil.copy(main_context, backup_path)
+    
+    # Copy idea context to main context
     content = context_file.read_text()
     main_context.write_text(content)
     
-    # Get headline from ideas
-    ideas = _parse_ideas()
-    headline = idea_id
-    for idea in ideas:
-        if idea['id'] == idea_id:
-            headline = idea['headline']
-            break
+    headline = idea['headline']
     
-    # Update status.json
-    if STATUS_FILE.exists():
-        status = json.loads(STATUS_FILE.read_text())
-        status['problem']['text'] = headline
-        status['problem']['source'] = f"plugin/context_{idea_id}.md"
-        STATUS_FILE.write_text(json.dumps(status, indent=2))
+    # Reset status.json to default workflow state
+    _reset_status_json(headline)
     
-    # Mark idea as EXECUTED
-    content = _read_ideas_file()
-    content = content.replace(
-        f"## ID: {idea_id}\n**Headline:** {headline}\n**Created:",
-        f"## ID: {idea_id}\n**Headline:** {headline}\n**Context File:** plugin/context_{idea_id}.md\n**Created:"
-    )
-    marker = f"## ID: {idea_id}"
-    if marker in content:
-        parts = content.split(marker)
-        if len(parts) > 1:
-            section = parts[1]
-            next_idea = section.find('\n---\n## ID:')
-            if next_idea == -1:
-                idea_section = section
-                rest = ""
-            else:
-                idea_section = section[:next_idea]
-                rest = section[next_idea:]
-            
-            idea_section = idea_section.replace("**Status:** NEW", "**Status:** EXECUTED")
-            content = parts[0] + marker + idea_section + rest
-            _write_ideas_file(content)
+    # Update idea status to ACTIVATED
+    _update_idea_status(idea_id, STATE_ACTIVATED)
     
     return True, f"Activated idea: {headline}"
+
+
+def complete_idea(idea_id: str) -> Tuple[bool, str]:
+    """
+    Mark an idea as DONE.
+    Returns (success, message)
+    """
+    # Find the idea
+    ideas = _parse_ideas()
+    idea = None
+    for i in ideas:
+        if i['id'] == idea_id:
+            idea = i
+            break
+    
+    if not idea:
+        return False, f"Idea not found: {idea_id}"
+    
+    if idea['status'].upper() != STATE_ACTIVATED:
+        return False, f"Idea must be ACTIVATED to mark as done. Current status: {idea['status']}"
+    
+    # Update status to DONE
+    _update_idea_status(idea_id, STATE_DONE)
+    
+    return True, f"Completed idea: {idea['headline']}"
+
+
+def _reset_status_json(headline: str):
+    """Reset status.json to default workflow state with new idea headline"""
+    default_status = {
+        "problem": {
+            "source": "plugin/context.md",
+            "text": headline
+        },
+        "cycle": 0,
+        "current_phase": "not_started",
+        "current_actor": "orchestrator",
+        "phase_status": "pending",
+        "actor_status": "pending",
+        "review_status": "pending",
+        "comms": {
+            "primary": "telegram",
+            "fallback": "status_file",
+            "state": "ready",
+            "last_checked_at": datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        },
+        "client_action_required": False,
+        "client_channel": {
+            "type": "telegram",
+            "allowed_user_ids": [6660576747]
+        },
+        "client_questions": [],
+        "client_answers": [],
+        "ack_requests": [],
+        "changesets": {
+            "active": None,
+            "queue": [],
+            "policy": {
+                "commit_cap": 50,
+                "client_ack_required_for_merge": True,
+                "only_orchestrator_merges_to_main": True
+            }
+        },
+        "artifacts": {},
+        "gates": {
+            "COMMS_READY": "pending",
+            "REQ_REVIEW_APPROVED": "pending",
+            "REQ_CLIENT_ACK": "pending",
+            "ARCH_REVIEW_APPROVED": "pending",
+            "DEVOPS_REVIEW_APPROVED": "pending",
+            "SECURITY_APPROVED": "pending",
+            "FINAL_CLIENT_ACK": "pending"
+        },
+        "timestamps": {
+            "workflow_started_at": "",
+            "phase_started_at": "",
+            "phase_ended_at": ""
+        }
+    }
+    
+    STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    STATUS_FILE.write_text(json.dumps(default_status, indent=2))
+
+
+# Keep old function name for backwards compatibility
+def execute_idea(idea_id: str) -> Tuple[bool, str]:
+    """Deprecated: Use activate_idea instead"""
+    return activate_idea(idea_id)
