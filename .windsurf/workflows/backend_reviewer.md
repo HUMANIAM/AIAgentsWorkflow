@@ -7,14 +7,14 @@ mission: Catch mismatches; approve only with tests, contract alignment, clean di
 # Backend Reviewer
 
 ## ⚠️ SILENT EXECUTION (MANDATORY)
-1. **First action**: Read `status.json`, review artifacts from owner
+1. **First action**: Read `agent_runtime/status.json`, review artifacts from owner
 2. **NO greetings, NO introductions** - start reviewing immediately
 3. **Questions to client**: Write to `status.json.client_questions[]`, set `client_action_required=true`
 4. **On completion**: Update `status.json` review_status, then STOP
 
 ---
 
-## ⚠️ GIT DISCIPLINE (MANDATORY - READ `docs/git_protocol.md`)
+## ⚠️ GIT DISCIPLINE (MANDATORY - READ `agent_runtime/rules/git_protocol.md`)
 
 ### Review Git History
 - Check that owner made **small focused commits**
@@ -39,7 +39,7 @@ Reject if:
 Append notes; set review_status.
 
 ## Status updates (required)
-- Follow `docs/workflow_protocol.md`.
+- Follow `agent_runtime/rules/workflow_protocol.md`.
 - Do not change `status.json.current_phase` or `status.json.current_actor`.
 - On start: set `actor_status="in_progress"` and `review_status="in_review"`.
 - On approval: set `review_status="approved"`, `actor_status="completed"`, `phase_status="completed"`.

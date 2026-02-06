@@ -8,18 +8,65 @@ mission: Control SDLC flow, enforce gates, keep status.json consistent, and reli
 
 ## ⚠️ HARD START ALGORITHM (MANDATORY - READ FIRST)
 
-**On `/orchestrator` invocation, execute steps A→F immediately. NO PROSE. NO GREETINGS. NO INTRODUCTIONS.**
+**On `/orchestrator` invocation, execute steps 0→F immediately. NO PROSE. NO GREETINGS. NO INTRODUCTIONS.**
 
-### Step A: Read State (FIRST ACTION)
+### Step 0: Setup (BEFORE ANY PHASE)
 ```
-1. Read `status.json`
-2. Read `plugin/context.md`
+# 0a. Git repo check
+IF .git does not exist:
+    git init
+    git add .
+    git commit -m "chore: Initial commit"
+
+# 0b. Telegram bot check
+bot_running = $(ps aux | grep "python.*main.py" | grep -v grep)
+IF bot_running is empty:
+    cd steward_ai_zorba_bot
+    source .venv/bin/activate
+    nohup python main.py > bot.log 2>&1 &
+    cd ..
+    # Wait 3 seconds for bot to start
+    sleep 3
+    # Verify bot started
+    bot_running = $(ps aux | grep "python.*main.py" | grep -v grep)
+    IF bot_running is empty:
+        → Log error: "Failed to start Telegram bot"
+        → Set status.json.comms.state = "fallback_only"
+    ELSE:
+        → Set status.json.comms.state = "ready"
 ```
 
-### Step A.1: Create Idea Branch (IF NEW FLOW)
+### Step A: Read State
+```
+1. Read `agent_runtime/status.json`
+2. Read `agent_runtime/plugin/context.md`
+```
+
+### Step A.1: Parse Phase Configuration
+```
+# Invocation formats:
+# /orchestrator                           → Full flow (all phases, owner+reviewer)
+# /orchestrator phase1, phase2:owner      → Selective phases
+#
+# Phase config syntax:
+#   phaseN           = full phase (owner + reviewer)
+#   phaseN:owner     = owner only, skip reviewer
+#   phaseN:reviewer  = reviewer only (if has review points, invokes owner)
+
+IF invocation has phase arguments:
+    Parse into status.json.phase_config = [
+        {"phase": "requirements", "mode": "full"},
+        {"phase": "architecture", "mode": "owner_only"},
+        ...
+    ]
+ELSE:
+    status.json.phase_config = "full_flow"
+```
+
+### Step A.2: Create Idea Branch (IF NEW FLOW)
 ```
 IF current_phase == "not_started" OR starting new idea:
-    idea_id = slugify(status.json.problem.text) OR from plugin/context.md frontmatter
+    idea_id = slugify(status.json.problem.text) OR from agent_runtime/plugin/context.md frontmatter
     
     # Create and switch to idea branch
     git checkout -b idea/<idea_id>
@@ -47,28 +94,34 @@ IF client_action_required == true:
 ```
 Use orchestrator.py or manually determine:
 - If actor_status != "completed" → current actor continues
-- If actor_status == "completed" AND review_status == "not_started" → switch to reviewer
-- If review_status == "approved" → advance to next phase owner
-- If review_status == "changes_requested" → return to owner (max 2 cycles)
+- If actor_status == "completed" AND review_status == "not_started":
+    - Check phase_config mode
+    - IF mode == "owner_only" → advance to next phase owner
+    - ELSE → switch to reviewer
+- If review_status == "approved" OR review_status == "forced_approved" → advance to next phase owner
+- If review_status == "changes_requested":
+    - Check review_cycle_count
+    - IF review_cycle_count >= 2 → reviewer must force approve (see Forced Approval)
+    - ELSE → return to owner, increment review_cycle_count
 ```
 
 ### Step D: Update status.json
 ```
 Write the transition:
-- current_phase, current_actor, phase_status, actor_status, review_status
+- current_phase, current_actor, phase_status, actor_status, review_status, review_cycle_count
 ```
 
-### Step E: Append status_history.csv
+### Step E: Append agent_runtime/status_history.csv
 ```
-One row: timestamp,from_phase,from_phase_status,from_actor,to_phase,to_actor,to_phase_status
+One row: timestamp,from_phase,from_phase_status,from_actor,to_phase,to_actor,to_phase_status,review_status
 ```
 
 ### Step F: Invoke Next Agent
 ```
 Call the workflow for current_actor:
-- /devops, /devops_reviewer
 - /system_analyst, /system_analyst_reviewer
 - /architect, /architect_reviewer
+- /devops, /devops_reviewer
 - /backend, /backend_reviewer
 - /backend_tester, /backend_tester_reviewer
 - /frontend, /frontend_reviewer
@@ -90,7 +143,7 @@ Call the workflow for current_actor:
 ---
 
 ## Protocol (non-negotiable)
-- Follow `docs/workflow_protocol.md` exactly.
+- Follow `agent_runtime/rules/workflow_protocol.md` exactly.
 - Orchestrator owns `current_phase` + `current_actor` transitions and `status_history.csv` appends.
 - Owners/reviewers must update `actor_status` + `review_status` for the active phase.
 
@@ -204,18 +257,23 @@ If CI fails 2 times in a row for the same root cause:
 
 ---
 
-## Bootstrap paradox policy (comms)
-Workflow starts in `bootstrap_comms`:
-- Owner: devops
-- Reviewer: devops_reviewer
-- DevOps must set `status.json.comms.state` to `ready` or `fallback_only` and produce `docs/comms_bootstrap_report.md`.
+## Forced Approval Policy (max 2 review cycles)
+
+After 2 review cycles with `changes_requested`:
+1. Reviewer MUST apply fixes themselves
+2. Commit with message: `fix(review): <description> [forced]`
+3. Set `review_status="forced_approved"` (NOT `approved`)
+4. Log in status_history.csv: `...,forced_approved,<reason>`
+5. Proceed to next phase
+
+**This is non-negotiable. No infinite review loops.**
 
 ---
 
 ## Execution loop (delegating)
 When `/orchestrator` is triggered:
-1. Read problem from `plugin/context.md`
-2. Validate `status.json` against `docs/workflow_protocol.md` (self-heal obvious inconsistencies).
+1. Read problem from `agent_runtime/plugin/context.md`
+2. Validate `agent_runtime/status.json` against `agent_runtime/rules/workflow_protocol.md` (self-heal obvious inconsistencies).
 3. Identify the *next required actor* for the current phase:
    - owner if owner work not completed
    - reviewer if owner completed and review not approved
@@ -233,9 +291,8 @@ For each phase:
 - On `approved`: orchestrator marks phase `completed` and advances to next phase owner.
 - On `changes_requested`: orchestrator returns to phase owner (max 2 review loops; if still failing, escalate to client decision).
 
-## Phases (strict order)
-0) bootstrap_comms: devops → devops_reviewer
-1) requirements: system_analyst → system_analyst_reviewer
+## Phases (strict order - NO bootstrap_comms, handled in Step 0)
+1) requirements: system_analyst → client confirmation (MANDATORY) → system_analyst_reviewer
 2) architecture: architect → architect_reviewer
 3) devops: devops → devops_reviewer
 4) backend: backend → backend_reviewer
@@ -244,8 +301,7 @@ For each phase:
 7) frontend_testing: frontend_tester → frontend_tester_reviewer
 8) integration_testing: integration_tester → integration_tester_reviewer
 9) security: security → security_reviewer
-10) client_acceptance: client (no reviewer)
-11) done: orchestrator
+10) done: orchestrator (write client_report.md, notify via Telegram bot)
 
 ---
 
@@ -313,7 +369,7 @@ Send Telegram message: "Hi! We finished implementing idea: <headline>"
 ---
 
 ## Git Protocol Reference
-All agents MUST follow `docs/git_protocol.md`:
+All agents MUST follow `agent_runtime/rules/git_protocol.md`:
 - Branch created at flow start (orchestrator)
 - All commits LOCAL until flow completes
 - Small focused commits with clear messages
@@ -322,8 +378,30 @@ All agents MUST follow `docs/git_protocol.md`:
 
 ---
 
+## Development Philosophy (ENFORCED ON ALL AGENTS)
+
+### Vertical Slice Approach
+- Complete one feature end-to-end before moving to next
+- Each slice: model → schema → repo → service → route → tests
+- CI must pass after each slice - NO regression allowed
+
+### Clean Code Principles
+- **KISS** - Keep It Simple, Stupid
+- **DRY** - Don't Repeat Yourself (extract shared helpers)
+- **YAGNI** - You Ain't Gonna Need It
+- **SOLID** principles
+- Modularity, loose coupling, high cohesion
+
+### Git Commit Discipline
+- Small focused commits (one logical change per commit)
+- Conventional commit messages: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`, `security:`
+- Run CI before every commit: `mypy → black → ruff → pytest`
+- NEVER commit if tests fail
+
+---
+
 ## Legacy Reference
 Reference:
-- docs/change_log.md
-- docs/decisions.md
+- agent_runtime/artifacts_history/{idea_id}/change_log.md
+- agent_runtime/artifacts_history/{idea_id}/decisions.md
 - CI checks (PR links)
