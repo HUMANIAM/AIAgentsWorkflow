@@ -1,0 +1,52 @@
+{
+  "problem": {
+    "source": "plugin/context.md",
+    "text": ""
+  },
+  "cycle": 0,
+  "current_phase": "done",
+  "current_actor": "orchestrator",
+  "phase_status": "completed",
+  "actor_status": "completed",
+  "review_status": "approved",
+  "comms": {
+    "primary": "telegram",
+    "fallback": "status_file",
+    "state": "ready",
+    "last_checked_at": "2026-02-06T00:20:00Z"
+  },
+  "client_action_required": false,
+  "client_channel": {
+    "type": "telegram",
+    "allowed_user_ids": [
+      6660576747
+    ]
+  },
+  "client_questions": [],
+  "client_answers": [],
+  "ack_requests": [],
+  "changesets": {
+    "active": null,
+    "queue": [],
+    "policy": {
+      "commit_cap": 50,
+      "client_ack_required_for_merge": true,
+      "only_orchestrator_merges_to_main": true
+    }
+  },
+  "artifacts": {},
+  "gates": {
+    "COMMS_READY": "pending",
+    "REQ_REVIEW_APPROVED": "pending",
+    "REQ_CLIENT_ACK": "pending",
+    "ARCH_REVIEW_APPROVED": "pending",
+    "DEVOPS_REVIEW_APPROVED": "pending",
+    "SECURITY_APPROVED": "pending",
+    "FINAL_CLIENT_ACK": "pending"
+  },
+  "timestamps": {
+    "workflow_started_at": "",
+    "phase_started_at": "",
+    "phase_ended_at": ""
+  }
+}
