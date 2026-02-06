@@ -1,384 +1,241 @@
 # Steward AI Zorba Bot 🤖
 
-A modular Telegram bot that reverses user messages. Designed with clean architecture principles: **SRP** (Single Responsibility), **DRY** (Don't Repeat Yourself), and **YAGNI** (You Aren't Gonna Need It).
+**The Client Communication Bridge for the AI Software Development Team**
 
-## What It Is
+This bot is the **sole communication channel** between the AI development team and the human client. It bridges the gap between autonomous AI agents working on software projects and the client who needs to provide input, answer questions, and approve decisions.
 
-A conversational Telegram bot that:
-- ✅ Polls for incoming messages from authorized users
-- ✅ Reverses received messages and sends them back
-- ✅ Tracks conversation state and session length
-- ✅ Validates all inputs for safety and correctness
-- ✅ Handles errors gracefully with detailed logging
-- ✅ Uses modular, testable, publication-ready code
+---
+
+## Role in the Team
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    AI SOFTWARE DEVELOPMENT TEAM                  │
+│                                                                  │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
+│  │ DevOps   │  │ Analyst  │  │ Architect│  │ Backend  │  ...   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘        │
+│       │             │             │             │               │
+│       └─────────────┴─────────────┴─────────────┘               │
+│                           │                                      │
+│                    ┌──────┴──────┐                              │
+│                    │ status.json │  ← Single source of truth    │
+│                    └──────┬──────┘                              │
+│                           │                                      │
+│              ┌────────────┴────────────┐                        │
+│              │  STEWARD AI ZORBA BOT   │  ← YOU ARE HERE        │
+│              │  (This Bot)             │                        │
+│              └────────────┬────────────┘                        │
+│                           │                                      │
+└───────────────────────────┼──────────────────────────────────────┘
+                            │
+                    ┌───────┴───────┐
+                    │    TELEGRAM   │
+                    │    (Client)   │
+                    └───────────────┘
+```
+
+## What This Bot Does
+
+### 1. **Delivers Team Questions to Client** 📋
+When AI agents need client input, they write questions to `status.json`. This bot:
+- Polls `status.json` every 10 seconds for pending questions
+- Generates **AI-powered suggested answers** using GPT-4o
+- Delivers questions to the client via Telegram with suggestions
+- Records client answers back to `status.json`
+
+### 2. **Enables Client-AI Conversation** 💬
+- Client receives questions with 3 smart suggestions
+- Client can reply with a number (1, 2, 3) or type custom answer
+- Bot records answer and notifies the team to continue
+
+### 3. **Idea Brainstorming Mode** 💡 *(Coming Soon)*
+- `/idea` - Start brainstorming session with GPT
+- `/idea stop` - Generate context file from conversation
+- `/idea list` - List all ideas
+- `/idea execute <id>` - Activate idea for team to work on
+
+---
+
+## How It Works
+
+### Question Flow
+```
+1. AI Agent writes question to status.json
+   └─ client_questions[]: { id, question, context, delivery_status: "pending" }
+
+2. Bot polls status.json (every 10 seconds)
+   └─ Finds pending question
+
+3. Bot calls GPT-4o for smart suggestions
+   └─ "What color should the app be?" → ["Blue (professional)", "Dark mode", "Let team decide"]
+
+4. Bot sends to Telegram
+   └─ 📋 Question from DevOps: ...
+      💡 Suggested answers: 1. Blue... 2. Dark... 3. Let team...
+
+5. Client replies (number or custom text)
+   └─ "2" or "I prefer green"
+
+6. Bot writes answer to status.json
+   └─ client_answers[]: { question_id, answer, source: "telegram" }
+   └─ Sets client_action_required: false
+
+7. AI team continues working
+```
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 - Python 3.8+
-- `pip` or `conda`
-- Telegram Bot Token (get from [@BotFather](https://t.me/botfather))
+- Telegram Bot Token (from [@BotFather](https://t.me/botfather))
+- OpenAI API Key (for GPT suggestions)
 
 ### Installation
 
-1. **Clone and navigate to the project:**
-   ```bash
-   cd steward_ai_zorba_bot
-   ```
+```bash
+cd steward_ai_zorba_bot
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-2. **Create virtual environment:**
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
+### Configuration
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+Create `.env` file:
+```env
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_ALLOWED_USER_IDS=your_telegram_user_id
+AI_API_KEY=your_openai_api_key
+```
 
-4. **Set up environment variables:**
-   Create `.env` file in the project root:
-   ```env
-   TELEGRAM_BOT_TOKEN=your_bot_id:your_bot_token
-   TELEGRAM_ALLOWED_USER_IDS=123456789,987654321
-   ```
-   - `TELEGRAM_BOT_TOKEN`: Get from [@BotFather](https://t.me/botfather)
-   - `TELEGRAM_ALLOWED_USER_IDS`: Comma-separated Telegram user IDs allowed to use the bot
+### Run
 
-5. **Run the bot:**
-   ```bash
-   python3 main.py
-   ```
+```bash
+python main.py
+```
 
-   The bot will:
-   - Log startup message with emoji prefix
-   - Start polling for messages every 1 second
-   - Reverse and reply to each message from authorized users
-   - Exit cleanly after processing (or with Ctrl+C)
+The bot will:
+- Start polling Telegram for messages
+- Poll `status.json` for pending questions
+- Deliver questions with GPT suggestions
+- Record answers back to `status.json`
+
+---
 
 ## Architecture
 
-The bot follows a **multi-channel architecture** with modular design principles for easy extension to new chat platforms:
-
 ```
 steward_ai_zorba_bot/
-├── main.py                             # Entry point (configurable via .env)
-├── requirements.txt                    # Python dependencies
-├── README.md                           # This file
+├── main.py                    # Entry point
+├── requirements.txt           # Dependencies
+├── .env                       # Configuration (not in git)
 │
-├── apps/                               # Chat channel implementations
-│   ├── __init__.py
-│   └── telegram/                       # Telegram channel implementation
-│       ├── __init__.py                 # Package exports
-│       ├── bot_config.py               # Configuration & validation
-│       ├── message_processor.py        # Message transformation logic
-│       ├── telegram_handler.py         # Telegram API wrapper
-│       ├── conversation_tracker.py     # Conversation state management
-│       └── console_logger.py           # Emoji-prefixed logging
+├── apps/
+│   └── telegram/
+│       ├── app.py             # Main bot class, message handling
+│       ├── question_poller.py # Polls status.json, delivers questions
+│       ├── bot_config.py      # Configuration & validation
+│       ├── telegram_handler.py# Telegram API wrapper
+│       └── console_logger.py  # Emoji-prefixed logging
 │
-└── tests/                              # 52 comprehensive tests
-    ├── telegram/                       # Telegram channel tests
-    │   ├── test_modules.py             # Unit tests (9 tests)
-    │   ├── test_bridge.py              # Bridge tests (12 tests)
-    │   ├── test_orchestrator.py        # Orchestration tests (8 tests)
-    │   ├── test_validation.py          # Validation tests (24 tests)
-    │   └── integration/
-    │       └── test_reverse_message.py # Integration test (6-exchange bot)
-    │
-    └── [legacy files - for backward compatibility]
-        ├── test_modules.py
-        ├── test_bridge.py
-        ├── test_orchestrator.py
-        └── test_validation.py
-```
-
-### Multi-Channel Design
-
-The `apps/` folder allows easy addition of new chat channels:
-
-**Future structure (example):**
-```
-apps/
-├── telegram/          # Current: Telegram bot
-├── whatsapp/          # Future: WhatsApp bot
-├── slack/             # Future: Slack bot
-└── discord/           # Future: Discord bot
-```
-
-Each channel implements:
-- Config class for channel-specific configuration
-- Message processor for transformation logic
-- Handler functions for channel API interaction
-- Tracker class for state management
-- Logger for formatted output
-
-Later, `.env` will support `CHAT_CHANNEL=telegram|whatsapp|slack` for dynamic channel selection.
-
-### Module Overview
-
-All modules are located in `apps/telegram/` for the Telegram channel implementation:
-
-#### `apps/telegram/bot_config.py` - Configuration & Validation
-- **Purpose:** Load and validate Telegram configuration from environment
-- **Key Class:** `Config`
-- **Validation:** Token format, numeric bot ID, user IDs, file existence
-- **Usage:**
-  ```python
-  config = Config()
-  if config.is_allowed(user_id):
-      # Process message from authorized user
-  ```
-
-#### `apps/telegram/message_processor.py` - Message Logic
-- **Purpose:** Transform messages using business logic
-- **Key Function:** `reverse_message(text: str) -> str`
-- **Validation:** None check, type check (string), empty/whitespace rejection
-- **Usage:**
-  ```python
-  reversed_msg = reverse_message("hello")  # Returns: "olleh"
-  ```
-
-#### `apps/telegram/telegram_handler.py` - Telegram API Wrapper
-- **Purpose:** Handle all Telegram interactions with validation
-- **Key Functions:**
-  - `send_msg(chat_id, text)` - Send message to chat
-  - `reply(update, text)` - Reply to specific message
-  - `get_user_id(update)` - Extract user ID from update
-  - `get_text(update)` - Extract text from update
-- **Validation:** Positive integer chat IDs, non-empty strings, null checks
-- **Usage:**
-  ```python
-  await send_msg(chat_id=123456, text="Hello!")
-  await reply(update=update_obj, text="Reversed message")
-  ```
-
-#### `apps/telegram/conversation_tracker.py` - State Management
-- **Purpose:** Track conversation progress and exchange count
-- **Key Class:** `Tracker`
-- **Validation:** Positive integer max_exchanges
-- **Usage:**
-  ```python
-  tracker = Tracker(max_exchanges=6)
-  tracker.next()  # Increment exchange count
-  if tracker.done():
-      break  # Conversation limit reached
-  ```
-
-#### `apps/telegram/console_logger.py` - Logging
-- **Purpose:** Log messages with emoji prefixes for readability
-- **Key Class:** `ConsoleLogger`
-- **Features:** Built-in emoji prefixes for different message types
-- **Usage:**
-  ```python
-  logger = ConsoleLogger()
-  logger.success("Bot started!")
-  logger.error("Invalid user ID")
-  ```
-
-## Usage Examples
-
-### Running the Bot
-
-**Standard execution:**
-```bash
-python3 main.py
-```
-
-**With Python explicitly:**
-```bash
-python3 main.py
-```
-
-### Testing
-
-**Run all tests (52 tests, all passing):**
-```bash
-python3 -m pytest tests/telegram/ -v
-```
-
-**Run only telegram channel tests:**
-```bash
-pytest tests/telegram/ -v
-```
-
-**Run only validation tests (24 tests):**
-```bash
-pytest tests/telegram/test_validation.py -v
-```
-
-### Integration Test
-
-The bot includes a real integration test that:
-1. Starts the bot
-2. Sends startup message
-3. Polls for incoming messages
-4. Reverses and replies to 6 messages
-5. Exits gracefully
-
-Run it with:
-```bash
-pytest tests/telegram/integration/test_reverse_message.py -v -s
-```
-
-## Input Validation & Error Handling
-
-The bot validates all inputs and handles failure modes gracefully:
-
-### Configuration Validation
-- ✅ Environment file exists (`.env`)
-- ✅ Token is provided and non-empty
-- ✅ Token format is valid (contains ':')
-- ✅ Bot ID is numeric
-- ✅ User IDs are numeric
-- ✅ Whitespace is stripped from inputs
-
-### Message Validation
-- ✅ Message is not None
-- ✅ Message is a string
-- ✅ Message is not empty or whitespace-only
-
-### State Validation
-- ✅ Exchange limit is positive integer
-- ✅ Exchange count doesn't exceed limit
-
-### Error Handling
-- ✅ Invalid chat IDs are logged and skipped
-- ✅ Invalid messages are rejected with ValueError
-- ✅ Missing configuration fails fast with clear error message
-- ✅ Type errors are caught and logged
-- ✅ Edge cases (whitespace, empty strings, None values) are handled
-
-**Test Coverage:** 24 comprehensive validation tests covering all failure modes
-
-## Code Quality
-
-### Design Principles
-- **SRP:** Each module has a single responsibility
-- **DRY:** No code duplication across modules
-- **YAGNI:** Only implemented features actually needed
-- **Small Functions:** Average 5-10 lines per function
-- **Clear Tests:** 52 tests with descriptive names
-
-### Test Results
-```
-tests/telegram/test_bridge.py           12 tests ✅
-tests/telegram/test_modules.py           9 tests ✅
-tests/telegram/test_orchestrator.py      8 tests ✅
-tests/telegram/test_validation.py       24 tests ✅
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TOTAL                                  52 tests ✅ (all passing)
-```
-
-### Key Metrics
-- **Lines of Code (core modules):** ~200 lines
-- **Test Coverage:** 24 validation tests + 28 unit/integration tests
-- **Test Pass Rate:** 100% (52/52 passing)
-- **Dependencies:** Only `python-telegram-bot` and `python-dotenv`
-
-## Troubleshooting
-
-### Bot doesn't receive messages
-**Check:**
-1. `.env` file exists with `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALLOWED_USER_IDS`
-2. Token format is correct: `id:token` (contains colon)
-3. Your Telegram user ID is in `TELEGRAM_ALLOWED_USER_IDS`
-4. Bot is polling (look for polling logs in console)
-
-**Error:** `ValueError: TELEGRAM_BOT_TOKEN: required, cannot be empty`
-- Solution: Set `TELEGRAM_BOT_TOKEN` in `.env` file
-
-**Error:** `ValueError: TELEGRAM_BOT_TOKEN: invalid format`
-- Solution: Token must be in format `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11` (get from @BotFather)
-
-### Invalid user ID
-**Error:** `ValueError: Non-numeric user IDs`
-- Solution: Ensure `TELEGRAM_ALLOWED_USER_IDS` contains only numbers separated by commas
-
-## Project Structure
-
-```
-steward_ai_zorba_bot/
-├── main.py                             # Entry point (will support CHAT_CHANNEL in .env)
-├── .env                                # Environment variables (NOT in git)
-├── .env.example                        # Example environment file
-├── requirements.txt                    # Python dependencies
-├── README.md                           # This file
+├── services/
+│   ├── status_handler.py      # Read/write status.json
+│   └── openai_client.py       # GPT-4o integration for suggestions
 │
-├── apps/                               # Chat channel implementations
-│   ├── __init__.py
-│   └── telegram/                       # Telegram channel
-│       ├── __init__.py
-│       ├── bot_config.py               # Config class with validation
-│       ├── message_processor.py        # reverse_message() function
-│       ├── telegram_handler.py         # Telegram API wrapper functions
-│       ├── conversation_tracker.py     # Tracker class for state
-│       └── console_logger.py            # Log class for logging
-│
-└── tests/                              # 52 comprehensive tests
-    ├── telegram/                       # Telegram channel tests
-    │   ├── test_modules.py             # Unit tests (9 tests)
-    │   ├── test_bridge.py              # Bridge tests (12 tests)
-    │   ├── test_orchestrator.py        # Orchestration tests (8 tests)
-    │   ├── test_validation.py          # Validation tests (24 tests)
-    │   └── integration/
-    │       └── test_reverse_message.py # Integration test (6-exchange bot)
-    │
-    └── [legacy files - backward compatibility]
-        ├── test_modules.py
-        ├── test_bridge.py
-        ├── test_orchestrator.py
-        ├── test_reverse_message.py
-        └── test_validation.py
+└── tests/
+    └── test_services.py       # Unit tests
 ```
+
+### Key Components
+
+| Component | Purpose |
+|-----------|---------|
+| `question_poller.py` | Polls `status.json` every 10s for pending questions |
+| `openai_client.py` | Generates smart answer suggestions via GPT-4o |
+| `status_handler.py` | Reads/writes questions and answers to `status.json` |
+| `app.py` | Handles incoming Telegram messages, routes to handlers |
+
+---
+
+## Integration with AI Team
+
+### status.json Interface
+
+The bot reads and writes to `../status.json` (parent directory):
+
+**Reading (questions from team):**
+```json
+{
+  "client_questions": [
+    {
+      "id": "Q-DEVOPS-001",
+      "from_agent": "DevOps",
+      "question": "What color should the app theme be?",
+      "context": "Designing the UI",
+      "delivery_status": "pending"
+    }
+  ]
+}
+```
+
+**Writing (answers from client):**
+```json
+{
+  "client_answers": [
+    {
+      "question_id": "Q-DEVOPS-001",
+      "answer": "Blue and white, professional look",
+      "source": "telegram",
+      "answered_at": "2026-02-06T01:30:00Z"
+    }
+  ],
+  "client_action_required": false
+}
+```
+
+---
 
 ## Dependencies
 
 ```
 python-telegram-bot==21.3
-python-dotenv==1.0.0
-pytest==7.4.0
+python-dotenv==1.0.1
+openai==1.6.1
+httpx==0.27.0
 ```
-
-See `requirements.txt` for complete list with pinned versions.
-
-## Contributing
-
-When extending this bot:
-1. Keep modules focused (single responsibility)
-2. Add validation for all inputs
-3. Write tests for new functionality
-4. Update this README with new features
-
-## Publishing
-
-This codebase is publication-ready:
-- ✅ Clean, modular multi-channel architecture
-- ✅ Comprehensive input validation
-- ✅ Full error handling
-- ✅ 52 passing tests (100% pass rate) in `tests/telegram/`
-- ✅ Clear documentation
-- ✅ No external complexity
-- ✅ Designed for easy extension to new channels
-
-To publish:
-1. Update version in code/config as needed
-2. Run full test suite: `pytest tests/telegram/ -v`
-3. Create git tag: `git tag v1.0.0`
-4. Push to repository
-
-## License
-
-See LICENSE file in repository
-
-## Support
-
-For issues or questions:
-1. Check troubleshooting section above
-2. Run tests to verify installation: `pytest tests/ -v`
-3. Review console logs for error messages
-4. Check `.env` configuration
 
 ---
 
-**Bot Status:** ✅ Production Ready | **Tests:** 52/52 Passing | **Last Updated:** 2024
+## Troubleshooting
+
+### Bot doesn't receive messages
+- Check `.env` has correct `TELEGRAM_BOT_TOKEN`
+- Verify your user ID is in `TELEGRAM_ALLOWED_USER_IDS`
+- Ensure only one bot instance is running
+
+### GPT suggestions show generic fallback
+- Check `AI_API_KEY` in `.env` is valid
+- Verify OpenAI account has credits
+- Check `httpx==0.27.0` is installed (version compatibility)
+
+### Questions not delivered
+- Verify `status.json` exists in parent directory
+- Check questions have `delivery_status: "pending"`
+- Look for errors in console logs
+
+---
+
+## Related Files
+
+| File | Purpose |
+|------|---------|
+| `../status.json` | Single source of truth for workflow state |
+| `../plugin/context.md` | Current task context for the team |
+| `../docs/workflow_protocol.md` | SDLC workflow rules |
+
+---
+
+**Bot Status:** ✅ Production Ready | **Last Updated:** 2026-02-06
