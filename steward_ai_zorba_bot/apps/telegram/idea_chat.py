@@ -16,8 +16,11 @@ from services.idea_handler import (
     update_headline,
     end_idea,
     list_ideas,
-    generate_context_file,
-    execute_idea
+    list_ideas_by_state,
+    plan_idea,
+    activate_idea,
+    complete_idea,
+    VALID_STATES
 )
 from services.openai_client import (
     chat_about_idea,
@@ -46,27 +49,41 @@ class IdeaChat:
         
         Args:
             user_id: Telegram user ID
-            text: Full message text (e.g., "/idea", "/idea stop", "/idea list")
+            text: Full message text (e.g., "/idea", "/idea stop", "/idea list new")
         
         Returns:
             True if command was handled, False otherwise
         """
         text = text.strip()
         
-        # /idea stop - end session
+        # /idea stop - end session → NEW
         if text == '/idea stop':
             await self.stop_session(user_id)
             return True
         
-        # /idea list - list all ideas
-        if text == '/idea list':
-            await self.list_all(user_id)
+        # /idea list {state} - list ideas by state (case-insensitive)
+        if text.startswith('/idea list'):
+            parts = text.split()
+            state = parts[2] if len(parts) > 2 else None
+            await self.list_by_state(user_id, state)
             return True
         
-        # /idea execute <id> - activate idea
-        if text.startswith('/idea execute '):
-            idea_id = text.replace('/idea execute ', '').strip()
-            await self.execute(user_id, idea_id)
+        # /idea plan {id} - generate context file → PLANNED
+        if text.startswith('/idea plan '):
+            idea_id = text.replace('/idea plan ', '').strip()
+            await self.plan(user_id, idea_id)
+            return True
+        
+        # /idea activate {id} - activate idea → ACTIVATED
+        if text.startswith('/idea activate '):
+            idea_id = text.replace('/idea activate ', '').strip()
+            await self.activate(user_id, idea_id)
+            return True
+        
+        # /idea done {id} - mark complete → DONE
+        if text.startswith('/idea done '):
+            idea_id = text.replace('/idea done ', '').strip()
+            await self.done(user_id, idea_id)
             return True
         
         # /idea - start new session (no content)
@@ -145,15 +162,13 @@ class IdeaChat:
         return True
     
     async def stop_session(self, user_id: int):
-        """Stop the current idea session and generate context file"""
+        """Stop the current idea session → state=NEW (lazy: no GPT call yet)"""
         idea_id = get_active_idea(user_id)
         if not idea_id:
             await self.send_func(user_id,
                 "❌ No active idea session.\n\n"
                 "Send `/idea` to start one.")
             return
-        
-        await self.send_func(user_id, "⏳ Generating context from our conversation...")
         
         # Get chat history
         history = get_chat_history(idea_id)
@@ -164,68 +179,146 @@ class IdeaChat:
                 "❌ No conversation recorded. Session ended without saving.")
             return
         
-        # Generate headline
+        # Generate headline only (lazy - no context file yet)
+        await self.send_func(user_id, "⏳ Generating headline...")
         headline, description = generate_idea_headline(history)
         new_id = update_headline(idea_id, headline)
         
-        # Generate context file
-        context_content = generate_context_from_chat(history)
-        context_path = generate_context_file(new_id, context_content)
-        
-        # End session
+        # End session - marks as NEW
         end_idea(user_id)
         
         await self.send_func(user_id,
-            f"✅ *Idea session ended!*\n\n"
+            f"✅ *Idea saved!*\n\n"
             f"💡 *Headline:* {headline}\n"
-            f"📄 *Context file:* `{context_path}`\n\n"
-            f"To activate this idea for the team, send:\n"
-            f"`/idea execute {new_id}`")
+            f"📝 *ID:* `{new_id}`\n"
+            f"📊 *Status:* NEW\n\n"
+            f"*Next steps:*\n"
+            f"1. `/idea plan {new_id}` - Generate context file\n"
+            f"2. `/idea activate {new_id}` - Activate for team\n\n"
+            f"_Use `/idea list new` to see all new ideas._")
         
-        logger.info(f"Ended idea session {new_id} for user {user_id}")
+        logger.info(f"Ended idea session {new_id} for user {user_id} → NEW")
     
-    async def list_all(self, user_id: int):
-        """List all ideas"""
-        ideas = list_ideas()
+    async def list_by_state(self, user_id: int, state: str = None):
+        """List ideas filtered by state (case-insensitive)"""
+        # Get status emoji mapping
+        status_emojis = {
+            'NEW': '💡',
+            'PLANNED': '📋',
+            'ACTIVATED': '🚀',
+            'DONE': '✅',
+            'IN_PROGRESS': '🔄'
+        }
+        
+        if state:
+            state_upper = state.upper()
+            if state_upper not in VALID_STATES:
+                await self.send_func(user_id,
+                    f"❌ Invalid state: `{state}`\n\n"
+                    f"Valid states: `new`, `planned`, `activated`, `done`")
+                return
+            
+            ideas = list_ideas_by_state(state_upper)
+            title = f"📋 *Ideas ({state_upper}):*"
+        else:
+            ideas = list_ideas()
+            title = "📋 *All Ideas:*"
         
         if not ideas:
             await self.send_func(user_id,
-                "📋 *Your Ideas:*\n\n"
-                "_No ideas yet. Send `/idea` to start brainstorming!_")
+                f"{title}\n\n"
+                f"_No ideas found. Send `/idea` to start brainstorming!_")
             return
         
-        msg = "📋 *Your Ideas:*\n\n"
+        msg = f"{title}\n\n"
         for i, idea in enumerate(ideas, 1):
-            status_emoji = "🔄" if idea['status'] == 'IN_PROGRESS' else "✅" if idea['status'] == 'EXECUTED' else "💡"
-            msg += f"{i}. {status_emoji} `{idea['id']}`\n   {idea['headline']}\n\n"
+            emoji = status_emojis.get(idea['status'].upper(), '❓')
+            msg += f"{i}. {emoji} `{idea['id']}`\n   {idea['headline']} ({idea['status']})\n\n"
         
-        msg += "_Send `/idea execute <id>` to activate an idea for the team._"
+        msg += "*Commands:*\n"
+        msg += "• `/idea plan <id>` - Generate context file\n"
+        msg += "• `/idea activate <id>` - Activate for team\n"
+        msg += "• `/idea done <id>` - Mark complete"
         
         await self.send_func(user_id, msg)
     
-    async def execute(self, user_id: int, idea_id: str):
-        """Execute an idea - copy to main context and update status.json"""
-        # If no ID provided, show available ideas
+    async def plan(self, user_id: int, idea_id: str):
+        """Plan an idea - generate context file → PLANNED"""
         if not idea_id:
-            await self.list_all(user_id)
+            await self.send_func(user_id,
+                "❌ Please provide an idea ID.\n\n"
+                "Usage: `/idea plan <id>`\n"
+                "_Use `/idea list new` to see available ideas._")
             return
         
-        success, message = execute_idea(idea_id)
+        await self.send_func(user_id, "⏳ Generating context file from chat history...")
+        
+        # Get chat history for the idea
+        history = get_chat_history(idea_id)
+        if not history:
+            await self.send_func(user_id, f"❌ No chat history found for idea: `{idea_id}`")
+            return
+        
+        # Generate context content using GPT
+        context_content = generate_context_from_chat(history)
+        
+        # Plan the idea
+        success, message = plan_idea(idea_id, context_content)
         
         if success:
             await self.send_func(user_id,
                 f"✅ *{message}*\n\n"
-                f"- Copied to `plugin/context.md`\n"
-                f"- Updated `status.json` problem text\n\n"
-                f"Run `/orchestrator` to start the team on this!")
+                f"📊 *Status:* PLANNED\n\n"
+                f"*Next step:*\n"
+                f"`/idea activate {idea_id}` - Activate for team")
         else:
-            # Show available ideas on error
-            ideas = list_ideas()
-            if ideas:
-                available = "\n".join([f"  • `{i['id']}`" for i in ideas])
-                await self.send_func(user_id, 
-                    f"❌ Idea not found: `{idea_id}`\n\n"
-                    f"Available ideas:\n{available}\n\n"
-                    f"_Use `/idea execute <id>` with one of the above IDs._")
-            else:
-                await self.send_func(user_id, f"❌ {message}")
+            await self.send_func(user_id, f"❌ {message}")
+        
+        logger.info(f"Planned idea {idea_id} for user {user_id}")
+    
+    async def activate(self, user_id: int, idea_id: str):
+        """Activate an idea - backup context.md, copy idea context, reset status.json"""
+        if not idea_id:
+            await self.send_func(user_id,
+                "❌ Please provide an idea ID.\n\n"
+                "Usage: `/idea activate <id>`\n"
+                "_Use `/idea list planned` to see available ideas._")
+            return
+        
+        success, message = activate_idea(idea_id)
+        
+        if success:
+            await self.send_func(user_id,
+                f"🚀 *{message}*\n\n"
+                f"• Backed up previous `context.md`\n"
+                f"• Copied idea context to `plugin/context.md`\n"
+                f"• Reset `status.json` for new workflow\n\n"
+                f"📊 *Status:* ACTIVATED\n\n"
+                f"Run `/orchestrator` to start the team on this!\n\n"
+                f"_When team finishes, use `/idea done {idea_id}` to mark complete._")
+        else:
+            await self.send_func(user_id, f"❌ {message}")
+        
+        logger.info(f"Activated idea {idea_id} for user {user_id}")
+    
+    async def done(self, user_id: int, idea_id: str):
+        """Mark an idea as done → DONE"""
+        if not idea_id:
+            await self.send_func(user_id,
+                "❌ Please provide an idea ID.\n\n"
+                "Usage: `/idea done <id>`\n"
+                "_Use `/idea list activated` to see active ideas._")
+            return
+        
+        success, message = complete_idea(idea_id)
+        
+        if success:
+            await self.send_func(user_id,
+                f"🎉 *{message}*\n\n"
+                f"📊 *Status:* DONE\n\n"
+                f"Great work! The idea has been completed.\n"
+                f"_Use `/idea list done` to see all completed ideas._")
+        else:
+            await self.send_func(user_id, f"❌ {message}")
+        
+        logger.info(f"Completed idea {idea_id} for user {user_id}")
