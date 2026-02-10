@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Version2 Workflow Profile",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "description",
+    "execution_mode",
+    "strict_mode",
+    "friendly_name",
+    "gates",
+    "phases"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9_\\-]+$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "friendly_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "execution_mode": {
+      "type": "string",
+      "enum": ["simulation", "realization"]
+    },
+    "strict_mode": {
+      "type": "boolean"
+    },
+    "invocation": {
+      "type": "string"
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "max_review_cycles": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "require_handoff_packet": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "phase", "owner", "required"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "roles"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "role", "step_type", "required_outputs"],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                },
+                "step_type": {
+                  "type": "string",
+                  "enum": ["owner", "reviewer", "gate", "validator"]
+                },
+                "required_outputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "review_of": {
+                  "type": "string"
+                },
+                "gate": {
+                  "type": "string"
+                },
+                "notes": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "step_type": {
+                        "const": "reviewer"
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": ["review_of"]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "step_type": {
+                        "const": "gate"
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": ["gate"]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

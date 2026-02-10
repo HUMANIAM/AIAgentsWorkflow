@@ -1,0 +1,2 @@
+- requirements snapshot updated by adapter
+- requirements snapshot updated by adapter

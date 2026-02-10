@@ -1,0 +1,12 @@
+- `2026-02-08T14:46:05Z` `system_analyst` executed `requirements_owner`
+- `2026-02-08T14:46:05Z` `requirements_reviewer` executed `requirements_review`
+- `2026-02-08T14:46:05Z` `architect` executed `architecture_owner`
+- `2026-02-08T14:46:05Z` `architecture_reviewer` executed `architecture_review`
+- `2026-02-08T14:46:05Z` `backend_engineer` executed `backend_owner`
+- `2026-02-08T14:46:05Z` `frontend_engineer` executed `frontend_owner`
+- `2026-02-08T14:46:06Z` `implementation_reviewer` executed `implementation_review`
+- `2026-02-08T14:46:06Z` `qa_engineer` executed `qa_owner`
+- `2026-02-08T14:46:06Z` `integration_tester` executed `integration_e2e`
+- `2026-02-08T14:46:07Z` `security_engineer` executed `security_owner`
+- `2026-02-08T14:46:07Z` `ai_evaluator` executed `ai_eval`
+- `2026-02-08T14:46:07Z` `release_manager` executed `release_owner`

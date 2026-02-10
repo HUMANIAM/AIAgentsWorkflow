@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Version2 SDLC Status",
+  "type": "object",
+  "required": [
+    "active_profile",
+    "phase_plan",
+    "current_step_index",
+    "current_phase",
+    "current_role",
+    "phase_status",
+    "role_status",
+    "review_status",
+    "realization_status",
+    "pending_human_gate_id",
+    "pending_human_question_id",
+    "execution_mode",
+    "workspace_dir",
+    "workspace_git_initialized",
+    "active_run_id",
+    "last_failed_role",
+    "integration_loop_status",
+    "commit_evidence",
+    "role_attempts",
+    "questions",
+    "answers",
+    "governance_gates",
+    "review_cycles",
+    "blocking_reasons",
+    "handoff_packet",
+    "artifacts",
+    "evidence",
+    "charter_version",
+    "score_run_id",
+    "timestamps"
+  ],
+  "properties": {
+    "active_profile": { "type": "string" },
+    "active_idea_id": { "type": "string" },
+    "active_idea_headline": { "type": "string" },
+    "active_idea": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "headline": { "type": "string" },
+        "owner_user_id": { "type": ["integer", "null"] },
+        "context_file": { "type": "string" },
+        "executed_at": { "type": "string" },
+        "profile": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "phase_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "phase", "role", "step_id", "step_type", "required_outputs"],
+        "properties": {
+          "index": { "type": "integer", "minimum": 0 },
+          "phase": { "type": "string" },
+          "role": { "type": "string" },
+          "step_id": { "type": "string" },
+          "step_type": { "type": "string", "enum": ["owner", "reviewer", "gate", "validator"] },
+          "review_of": { "type": "string" },
+          "gate": { "type": "string" },
+          "required_outputs": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "current_step_index": { "type": "integer", "minimum": 0 },
+    "current_phase": { "type": "string" },
+    "current_role": { "type": "string" },
+    "phase_status": {
+      "type": "string",
+      "enum": ["not_started", "in_progress", "waiting", "awaiting_review", "completed", "blocked"]
+    },
+    "role_status": {
+      "type": "string",
+      "enum": ["not_started", "in_progress", "completed"]
+    },
+    "review_status": {
+      "type": "string",
+      "enum": ["not_started", "in_review", "approved", "changes_requested"]
+    },
+    "realization_status": {
+      "type": "string",
+      "enum": ["not_started", "executing", "waiting_approval", "approved", "rejected", "completed"]
+    },
+    "pending_human_gate_id": { "type": "string" },
+    "pending_human_question_id": { "type": "string" },
+    "execution_mode": {
+      "type": "string",
+      "enum": ["simulation", "realization"]
+    },
+    "workspace_dir": { "type": "string" },
+    "workspace_git_initialized": { "type": "boolean" },
+    "active_run_id": { "type": "string" },
+    "last_failed_role": { "type": "string" },
+    "integration_loop_status": {
+      "type": "string",
+      "enum": ["idle", "running", "failed", "passed"]
+    },
+    "commit_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step_id", "role", "commit_sha", "message", "created_at"],
+        "properties": {
+          "step_id": { "type": "string" },
+          "role": { "type": "string" },
+          "commit_sha": { "type": "string" },
+          "message": { "type": "string" },
+          "created_at": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "role_attempts": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "from_role", "to_human", "required", "status", "created_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "from_role": { "type": "string" },
+          "to_human": { "type": "boolean" },
+          "required": { "type": "boolean" },
+          "status": { "type": "string", "enum": ["pending_delivery", "delivered", "answered", "closed"] },
+          "question": { "type": "string" },
+          "context": { "type": "string" },
+          "created_at": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["question_id", "answer", "source", "answered_at"],
+        "properties": {
+          "question_id": { "type": "string" },
+          "answer": { "type": "string" },
+          "source": { "type": "string" },
+          "answered_at": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "governance_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status", "owner"],
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+          "owner": { "type": "string" },
+          "reason": { "type": "string" },
+          "updated_at": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "review_cycles": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "blocking_reasons": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "handoff_packet": {
+      "type": "object",
+      "required": ["required_outputs", "provided_outputs"],
+      "properties": {
+        "required_outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "provided_outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "missing_outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "from_step": { "type": "string" },
+        "to_step": { "type": "string" },
+        "updated_at": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "owner", "updated_at"],
+        "properties": {
+          "path": { "type": "string" },
+          "owner": { "type": "string" },
+          "updated_at": { "type": "string" },
+          "ac_ids": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "location", "created_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "ac_ids": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "location": { "type": "string" },
+          "created_at": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "critical_failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["open", "resolved"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "charter_version": { "type": "string" },
+    "score_run_id": { "type": "string" },
+    "timestamps": {
+      "type": "object",
+      "required": ["workflow_started_at", "last_transition_at"],
+      "properties": {
+        "workflow_started_at": { "type": "string" },
+        "last_transition_at": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

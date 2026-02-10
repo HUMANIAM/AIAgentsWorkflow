@@ -1,0 +1,73 @@
+{
+  "profile": "smartbookmarker_realization",
+  "score_run_id": "score-smartbookmarker_realization-20260208T144604Z",
+  "generated_at": "2026-02-08T14:46:07Z",
+  "rubric_version": "v2.1",
+  "roles": [
+    {
+      "role": "ai_evaluator",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "architect",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "architecture_reviewer",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "backend_engineer",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "frontend_engineer",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "human_engineer",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "implementation_reviewer",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "integration_tester",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "qa_engineer",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "release_manager",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "requirements_reviewer",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "security_engineer",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    },
+    {
+      "role": "system_analyst",
+      "score": 8,
+      "notes": "Deterministic baseline score from charter execution compliance."
+    }
+  ]
+}

@@ -1,0 +1,291 @@
+{
+  "active_profile": "default_fallback_profile",
+  "phase_plan": [
+    {
+      "index": 0,
+      "phase": "requirements",
+      "role": "system_analyst",
+      "step_id": "requirements_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "acceptance_contract.md",
+        "traceability_map.md"
+      ]
+    },
+    {
+      "index": 1,
+      "phase": "requirements",
+      "role": "requirements_reviewer",
+      "step_id": "requirements_review",
+      "step_type": "reviewer",
+      "required_outputs": [
+        "review_requirements.md"
+      ],
+      "review_of": "system_analyst"
+    },
+    {
+      "index": 2,
+      "phase": "requirements",
+      "role": "human_engineer",
+      "step_id": "requirements_gate",
+      "step_type": "gate",
+      "required_outputs": [
+        "gate_req_freeze.md"
+      ],
+      "gate": "REQ_FREEZE_APPROVAL"
+    },
+    {
+      "index": 3,
+      "phase": "architecture",
+      "role": "architect",
+      "step_id": "architecture_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "architecture.md",
+        "decision_record.md"
+      ]
+    },
+    {
+      "index": 4,
+      "phase": "architecture",
+      "role": "architecture_reviewer",
+      "step_id": "architecture_review",
+      "step_type": "reviewer",
+      "required_outputs": [
+        "review_architecture.md"
+      ],
+      "review_of": "architect"
+    },
+    {
+      "index": 5,
+      "phase": "implementation",
+      "role": "devops_engineer",
+      "step_id": "devops_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "runbook.md",
+        "pipeline_notes.md"
+      ]
+    },
+    {
+      "index": 6,
+      "phase": "implementation",
+      "role": "backend_engineer",
+      "step_id": "backend_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "backend_notes.md",
+        "change_log.md"
+      ]
+    },
+    {
+      "index": 7,
+      "phase": "implementation",
+      "role": "frontend_engineer",
+      "step_id": "frontend_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "frontend_notes.md",
+        "change_log.md"
+      ]
+    },
+    {
+      "index": 8,
+      "phase": "implementation",
+      "role": "implementation_reviewer",
+      "step_id": "implementation_review",
+      "step_type": "reviewer",
+      "required_outputs": [
+        "review_implementation.md"
+      ],
+      "review_of": "frontend_engineer"
+    },
+    {
+      "index": 9,
+      "phase": "verification",
+      "role": "qa_engineer",
+      "step_id": "qa_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "test_report.md"
+      ]
+    },
+    {
+      "index": 10,
+      "phase": "verification",
+      "role": "security_engineer",
+      "step_id": "security_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "security_report.md"
+      ]
+    },
+    {
+      "index": 11,
+      "phase": "verification",
+      "role": "ai_evaluator",
+      "step_id": "ai_eval",
+      "step_type": "validator",
+      "required_outputs": [
+        "ai_eval_report.md",
+        "role_scoreboard.json",
+        "benchmark_results.md"
+      ]
+    },
+    {
+      "index": 12,
+      "phase": "readiness",
+      "role": "sre_engineer",
+      "step_id": "sre_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "reliability_plan.md",
+        "runbook.md"
+      ]
+    },
+    {
+      "index": 13,
+      "phase": "readiness",
+      "role": "technical_writer",
+      "step_id": "docs_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "release_notes.md"
+      ]
+    },
+    {
+      "index": 14,
+      "phase": "readiness",
+      "role": "release_reviewer",
+      "step_id": "readiness_review",
+      "step_type": "reviewer",
+      "required_outputs": [
+        "review_release.md"
+      ],
+      "review_of": "technical_writer"
+    },
+    {
+      "index": 15,
+      "phase": "release",
+      "role": "release_manager",
+      "step_id": "release_owner",
+      "step_type": "owner",
+      "required_outputs": [
+        "release_checklist.md"
+      ]
+    },
+    {
+      "index": 16,
+      "phase": "release",
+      "role": "human_engineer",
+      "step_id": "release_gate",
+      "step_type": "gate",
+      "required_outputs": [
+        "gate_release_approval.md"
+      ],
+      "gate": "RELEASE_APPROVAL"
+    }
+  ],
+  "current_step_index": 16,
+  "current_phase": "release",
+  "current_role": "human_engineer",
+  "phase_status": "waiting",
+  "role_status": "in_progress",
+  "review_status": "not_started",
+  "questions": [],
+  "answers": [],
+  "governance_gates": [
+    {
+      "id": "REQ_FREEZE_APPROVAL",
+      "status": "approved",
+      "owner": "human_engineer",
+      "reason": "Requirements accepted.",
+      "updated_at": "2026-02-07T22:19:06Z"
+    },
+    {
+      "id": "RELEASE_APPROVAL",
+      "status": "pending",
+      "owner": "human_engineer",
+      "reason": "",
+      "updated_at": "2026-02-07T22:19:06Z"
+    }
+  ],
+  "review_cycles": {
+    "requirements": 1,
+    "architecture": 0,
+    "implementation": 1,
+    "readiness": 0
+  },
+  "blocking_reasons": [
+    "Awaiting human approval for gate: RELEASE_APPROVAL"
+  ],
+  "handoff_packet": {
+    "required_outputs": [
+      "gate_release_approval.md"
+    ],
+    "provided_outputs": [
+      "release_checklist.md"
+    ],
+    "missing_outputs": [],
+    "from_step": "release_owner",
+    "to_step": "release_gate",
+    "updated_at": "2026-02-07T22:40:00Z"
+  },
+  "artifacts": {
+    "release_checklist.md": {
+      "path": "Version2/agent_runtime/artifacts/release_checklist.md",
+      "owner": "release_manager",
+      "updated_at": "2026-02-07T22:38:00Z"
+    },
+    "test_report.md": {
+      "path": "Version2/agent_runtime/artifacts/test_report.md",
+      "owner": "qa_engineer",
+      "updated_at": "2026-02-07T22:15:00Z"
+    },
+    "security_report.md": {
+      "path": "Version2/agent_runtime/artifacts/security_report.md",
+      "owner": "security_engineer",
+      "updated_at": "2026-02-07T22:20:00Z"
+    }
+  },
+  "evidence": [
+    {
+      "id": "E-TEST-001",
+      "type": "test_report",
+      "ac_ids": [
+        "AC-01",
+        "AC-02",
+        "AC-03"
+      ],
+      "location": "Version2/agent_runtime/artifacts/test_report.md",
+      "created_at": "2026-02-07T22:15:00Z"
+    },
+    {
+      "id": "E-SEC-001",
+      "type": "security_report",
+      "ac_ids": [
+        "AC-03"
+      ],
+      "location": "Version2/agent_runtime/artifacts/security_report.md",
+      "created_at": "2026-02-07T22:20:00Z"
+    }
+  ],
+  "critical_failures": [],
+  "charter_version": "v2.1",
+  "score_run_id": "score-default_fallback_profile-20260207T221906Z",
+  "timestamps": {
+    "workflow_started_at": "2026-02-07T22:19:06Z",
+    "last_transition_at": "2026-02-07T22:40:00Z"
+  },
+  "realization_status": "waiting_approval",
+  "pending_human_gate_id": "RELEASE_APPROVAL",
+  "pending_human_question_id": "",
+  "execution_mode": "simulation",
+  "workspace_dir": "",
+  "workspace_git_initialized": false,
+  "active_run_id": "run-v1-parity-release-example",
+  "last_failed_role": "",
+  "integration_loop_status": "idle",
+  "commit_evidence": [],
+  "role_attempts": {}
+}

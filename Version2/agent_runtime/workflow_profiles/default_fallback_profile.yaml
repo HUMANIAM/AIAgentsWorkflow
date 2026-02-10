@@ -1,0 +1,144 @@
+name: default_fallback_profile
+version: 1
+friendly_name: "Default Fallback Profile - Compatibility Benchmark"
+description: "Default fallback benchmark profile to keep workflow execution deterministic and backward compatible."
+execution_mode: simulation
+strict_mode: true
+invocation: "/orchestrator @default_fallback_profile"
+defaults:
+  max_review_cycles: 2
+  require_handoff_packet: true
+gates:
+  - id: REQ_FREEZE_APPROVAL
+    phase: requirements
+    owner: human_engineer
+    required: true
+    description: "Human confirms acceptance contract and scope freeze for implementation."
+  - id: RELEASE_APPROVAL
+    phase: release
+    owner: human_engineer
+    required: true
+    description: "Human approves final release package based on evidence."
+phases:
+  - id: requirements
+    description: "Define and validate measurable requirements."
+    roles:
+      - id: requirements_owner
+        role: system_analyst
+        step_type: owner
+        required_outputs:
+          - acceptance_contract.md
+          - traceability_map.md
+      - id: requirements_review
+        role: requirements_reviewer
+        step_type: reviewer
+        review_of: system_analyst
+        required_outputs:
+          - review_requirements.md
+      - id: requirements_gate
+        role: human_engineer
+        step_type: gate
+        gate: REQ_FREEZE_APPROVAL
+        required_outputs:
+          - gate_req_freeze.md
+
+  - id: architecture
+    description: "Design system and validate architecture decisions."
+    roles:
+      - id: architecture_owner
+        role: architect
+        step_type: owner
+        required_outputs:
+          - architecture.md
+          - decision_record.md
+      - id: architecture_review
+        role: architecture_reviewer
+        step_type: reviewer
+        review_of: architect
+        required_outputs:
+          - review_architecture.md
+
+  - id: implementation
+    description: "Implement product slices and review scope discipline."
+    roles:
+      - id: devops_owner
+        role: devops_engineer
+        step_type: owner
+        required_outputs:
+          - runbook.md
+          - pipeline_notes.md
+      - id: backend_owner
+        role: backend_engineer
+        step_type: owner
+        required_outputs:
+          - backend_notes.md
+          - change_log.md
+      - id: frontend_owner
+        role: frontend_engineer
+        step_type: owner
+        required_outputs:
+          - frontend_notes.md
+          - change_log.md
+      - id: implementation_review
+        role: implementation_reviewer
+        step_type: reviewer
+        review_of: frontend_engineer
+        required_outputs:
+          - review_implementation.md
+
+  - id: verification
+    description: "Validate behavior, security, and agent quality."
+    roles:
+      - id: qa_owner
+        role: qa_engineer
+        step_type: owner
+        required_outputs:
+          - test_report.md
+      - id: security_owner
+        role: security_engineer
+        step_type: owner
+        required_outputs:
+          - security_report.md
+      - id: ai_eval
+        role: ai_evaluator
+        step_type: validator
+        required_outputs:
+          - ai_eval_report.md
+          - role_scoreboard.json
+          - benchmark_results.md
+
+  - id: readiness
+    description: "Prepare reliability and release-ready documentation package."
+    roles:
+      - id: sre_owner
+        role: sre_engineer
+        step_type: owner
+        required_outputs:
+          - reliability_plan.md
+          - runbook.md
+      - id: docs_owner
+        role: technical_writer
+        step_type: owner
+        required_outputs:
+          - release_notes.md
+      - id: readiness_review
+        role: release_reviewer
+        step_type: reviewer
+        review_of: technical_writer
+        required_outputs:
+          - review_release.md
+
+  - id: release
+    description: "Assemble and approve release."
+    roles:
+      - id: release_owner
+        role: release_manager
+        step_type: owner
+        required_outputs:
+          - release_checklist.md
+      - id: release_gate
+        role: human_engineer
+        step_type: gate
+        gate: RELEASE_APPROVAL
+        required_outputs:
+          - gate_release_approval.md

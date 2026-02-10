@@ -1,0 +1,50 @@
+[
+  {
+    "headline": "Playwright simulation note for SmartBookmarker",
+    "text": "Playwright simulation note for SmartBookmarker",
+    "category": "research",
+    "created_at": "2026-02-08T14:46:06Z",
+    "storage_mode": "mock_sheet",
+    "destination": "/media/ibrahim/data/Apps_ideas/AISWTeam/AIAgentsWorkflow/Version2/implementations/smartbookmarker_ai_powered_boo/backend/data/mock_sheet/research.md"
+  },
+  {
+    "headline": "Integration tester probe note: verify Google Sheets roundtrip tab write/read.",
+    "text": "Integration tester probe note: verify Google Sheets roundtrip tab write/read.",
+    "category": "research",
+    "created_at": "2026-02-08T18:10:23Z",
+    "storage_mode": "mock_sheet",
+    "destination": "/media/ibrahim/data/Apps_ideas/AISWTeam/AIAgentsWorkflow/Version2/implementations/smartbookmarker_ai_powered_boo/backend/data/mock_sheet/research.md"
+  },
+  {
+    "headline": "Integration tester live probe at 2026-02-08T18:11:49.709424+00:00",
+    "text": "Integration tester live probe at 2026-02-08T18:11:49.709424+00:00",
+    "category": "research",
+    "created_at": "2026-02-08T18:11:49Z",
+    "storage_mode": "google_sheets",
+    "destination": "google_sheets:research"
+  },
+  {
+    "headline": "Playwright simulation note for SmartBookmarker",
+    "text": "Playwright simulation note for SmartBookmarker",
+    "category": "research",
+    "created_at": "2026-02-08T18:12:16Z",
+    "storage_mode": "google_sheets",
+    "destination": "google_sheets:research"
+  },
+  {
+    "headline": "Integration extension->backend->google probe 2026-02-08T18:12:44.799827+00:00",
+    "text": "Integration extension->backend->google probe 2026-02-08T18:12:44.799827+00:00",
+    "category": "research",
+    "created_at": "2026-02-08T18:12:44Z",
+    "storage_mode": "google_sheets",
+    "destination": "google_sheets:research"
+  },
+  {
+    "headline": "Playwright simulation note for SmartBookmarker",
+    "text": "Playwright simulation note for SmartBookmarker",
+    "category": "research",
+    "created_at": "2026-02-08T18:13:00Z",
+    "storage_mode": "google_sheets",
+    "destination": "google_sheets:research"
+  }
+]

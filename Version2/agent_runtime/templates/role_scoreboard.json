@@ -1,0 +1,16 @@
+{
+  "profile": "default_fallback_profile",
+  "score_run_id": "score-default_fallback_profile-YYYYMMDDTHHMMSSZ",
+  "weights": {
+    "evidence_quality": 0.3,
+    "correctness": 0.3,
+    "protocol_compliance": 0.2,
+    "handoff_quality": 0.2
+  },
+  "hard_caps": {
+    "critical_protocol_breach": 4.0,
+    "unresolved_critical_defect": 5.0,
+    "missing_required_artifact": 3.0
+  },
+  "roles": []
+}

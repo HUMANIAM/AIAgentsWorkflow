@@ -1,0 +1,2 @@
+- architecture snapshot updated by adapter
+- architecture snapshot updated by adapter

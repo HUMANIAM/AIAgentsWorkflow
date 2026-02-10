@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "SmartBookmarker",
+  "version": "0.2.0",
+  "description": "Capture selected browser text and route it into AI-categorized sheet tabs.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SmartBookmarker"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "contextMenus",
+    "notifications"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ]
+}

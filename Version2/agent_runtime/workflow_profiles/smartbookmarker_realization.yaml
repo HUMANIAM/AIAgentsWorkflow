@@ -1,0 +1,123 @@
+name: smartbookmarker_realization
+version: 1
+friendly_name: "SmartBookmarker Realization - Autonomous Implementation"
+description: "Realization profile that builds and validates SmartBookmarker through role-impersonated execution with hard git protocol enforcement."
+execution_mode: realization
+strict_mode: true
+invocation: "/orchestrator @smartbookmarker_realization"
+defaults:
+  max_review_cycles: 3
+  require_handoff_packet: true
+gates:
+  - id: REQ_FREEZE_APPROVAL
+    phase: requirements
+    owner: human_engineer
+    required: true
+    description: "Human confirms requirements freeze for realization."
+  - id: RELEASE_APPROVAL
+    phase: release
+    owner: human_engineer
+    required: true
+    description: "Human approves release package after verification."
+phases:
+  - id: requirements
+    description: "Capture and review delivery-ready requirements."
+    roles:
+      - id: requirements_owner
+        role: system_analyst
+        step_type: owner
+        required_outputs:
+          - acceptance_contract.md
+          - traceability_map.md
+      - id: requirements_review
+        role: requirements_reviewer
+        step_type: reviewer
+        review_of: system_analyst
+        required_outputs:
+          - review_requirements.md
+      - id: requirements_gate
+        role: human_engineer
+        step_type: gate
+        gate: REQ_FREEZE_APPROVAL
+        required_outputs:
+          - gate_req_freeze.md
+
+  - id: architecture
+    description: "Design architecture and review tradeoffs."
+    roles:
+      - id: architecture_owner
+        role: architect
+        step_type: owner
+        required_outputs:
+          - architecture.md
+          - decision_record.md
+      - id: architecture_review
+        role: architecture_reviewer
+        step_type: reviewer
+        review_of: architect
+        required_outputs:
+          - review_architecture.md
+
+  - id: implementation
+    description: "Implement backend and extension slices."
+    roles:
+      - id: backend_owner
+        role: backend_engineer
+        step_type: owner
+        required_outputs:
+          - backend_notes.md
+          - change_log.md
+      - id: frontend_owner
+        role: frontend_engineer
+        step_type: owner
+        required_outputs:
+          - frontend_notes.md
+          - change_log.md
+      - id: implementation_review
+        role: implementation_reviewer
+        step_type: reviewer
+        review_of: frontend_engineer
+        required_outputs:
+          - review_implementation.md
+
+  - id: verification
+    description: "Verify backend/frontend quality and close integration loop."
+    roles:
+      - id: qa_owner
+        role: qa_engineer
+        step_type: owner
+        required_outputs:
+          - test_report.md
+      - id: integration_e2e
+        role: integration_tester
+        step_type: reviewer
+        review_of: frontend_engineer
+        required_outputs:
+          - integration_e2e_report.md
+      - id: security_owner
+        role: security_engineer
+        step_type: owner
+        required_outputs:
+          - security_report.md
+      - id: ai_eval
+        role: ai_evaluator
+        step_type: validator
+        required_outputs:
+          - ai_eval_report.md
+          - role_scoreboard.json
+          - benchmark_results.md
+
+  - id: release
+    description: "Prepare release package and wait for approval."
+    roles:
+      - id: release_owner
+        role: release_manager
+        step_type: owner
+        required_outputs:
+          - release_checklist.md
+      - id: release_gate
+        role: human_engineer
+        step_type: gate
+        gate: RELEASE_APPROVAL
+        required_outputs:
+          - gate_release_approval.md

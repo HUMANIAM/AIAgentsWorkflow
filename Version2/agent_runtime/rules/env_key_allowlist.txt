@@ -1,0 +1,4 @@
+# Keys copied from steward_ai_zorba_bot/.env into realization workspace .env
+AI_API_KEY
+GOOGLE_SHEETS_SPREADSHEET_ID
+GOOGLE_APPLICATION_CREDENTIALS
